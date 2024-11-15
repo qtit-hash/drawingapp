@@ -1,15 +1,14 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useStrokesStore } from "@/store/strokesStore";
-import { cn, Mode, ModeEnum } from "@/lib/utils";
+import { Mode, ModeEnum } from "@/lib/utils";
 import {
   Pencil,
   Type,
   Eraser,
   Move,
-  MousePointer,
-  Download,  // Import icon Download
+  Download,
   LucideIcon,
-  Hand,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +17,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useCanvas } from "@/hooks/useCanvas";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import StylingPallete from "./StylingPallete";
 
 interface ModeConfig {
   mode: Mode;
@@ -27,6 +32,7 @@ interface ModeConfig {
   label: string;
   shortcut: string;
   disabled?: boolean;
+  special?: 'palette';  // Special flag for palette button
 }
 
 const modeConfigs: ModeConfig[] = [
@@ -36,6 +42,14 @@ const modeConfigs: ModeConfig[] = [
     cursorStyle: "crosshair",
     label: "Draw",
     shortcut: "1",
+  },
+  {
+    special: 'palette',  // Add palette button right after draw mode
+    mode: 'palette' as Mode,
+    icon: Palette,
+    cursorStyle: "default",
+    label: "Color Palette",
+    shortcut: "c",
   },
   {
     mode: ModeEnum.WRITE,
@@ -49,7 +63,7 @@ const modeConfigs: ModeConfig[] = [
     icon: Eraser,
     cursorStyle: "pointer",
     label: "Erase",
-    shortcut: "4",
+    shortcut: "3",
   },
   {
     mode: ModeEnum.SCROLL,
@@ -59,58 +73,35 @@ const modeConfigs: ModeConfig[] = [
     shortcut: "4",
   },
   {
-    mode: ModeEnum.CURSOR,
-    icon: MousePointer,
-    cursorStyle: "default",
-    label: "Select",
-    shortcut: "4",
-  },
-  {
-    mode: ModeEnum.MOVE,
-    icon: Hand,
-    cursorStyle: "default",
-    label: "Select",
-    shortcut: "6",
-  },
-  // Thêm chế độ Download vào modeConfigs
-  {
     mode: ModeEnum.DOWNLOAD,
-    icon: Download,  // Dùng icon Download
+    icon: Download,
     cursorStyle: "default",
     label: "Download",
-    shortcut: "D",  // Dùng phím tắt D
+    shortcut: "d",
   }
 ];
 
-const ModeButton: React.FC<{
+interface ModeButtonProps {
   config: ModeConfig;
   isActive: boolean;
   onClick: () => void;
-}> = ({ config, isActive, onClick }) => {
-  //canvasref = HTMLCanvasElement
-//   // bounding boxes = export interface BoundingBox {
-//   x: number;
-//   y: number;
-//   width: number;
-//   height: number;
-// }
-  const { boundingBox, canvasRef , clearCanvas } = useStrokesStore()
+}
+
+const ModeButton: React.FC<ModeButtonProps> = ({ config, isActive, onClick }) => {
+  const { boundingBox, canvasRef } = useStrokesStore();
+  const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
+
   const downloadRegion = () => {
-    // Kiểm tra cả canvasRef.current
     if (!canvasRef?.current || !boundingBox) return;
-  
-    // Tạo canvas tạm thời để chứa vùng cần tải
+
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
     
     if (!tempCtx) return;
-  
-    // Đặt kích thước cho canvas tạm thời bằng với vùng boundingBox
+
     tempCanvas.width = boundingBox.width;
     tempCanvas.height = boundingBox.height;
-  
-    // Copy vùng được chọn từ canvas gốc sang canvas tạm thời
-    // Sử dụng canvasRef.current thay vì canvasRef
+
     tempCtx.drawImage(
       canvasRef.current,
       boundingBox.x,
@@ -122,23 +113,52 @@ const ModeButton: React.FC<{
       boundingBox.width,
       boundingBox.height
     );
-  
-    // Tạo link tải ảnh
+
     const link = document.createElement('a');
-    link.download = 'canvas-region.png'; // Tên file khi tải về
+    link.download = 'canvas-region.png';
     
-    // Chuyển canvas thành URL
     tempCanvas.toBlob((blob) => {
       if (blob) {
         const url = URL.createObjectURL(blob);
         link.href = url;
         link.click();
-        
-        // Giải phóng URL sau khi tải xong
         URL.revokeObjectURL(url);
       }
     }, 'image/png');
   };
+
+  // Render palette button
+  if (config.special === 'palette') {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button 
+                  size="icon" 
+                  variant="ghost"
+                  className="shadow-none h-8 w-8 rounded p-2 flex items-center justify-center"
+                >
+                  <Palette className="w-4 h-4 bg-inherit" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-fit">
+                <StylingPallete setIsPopoverOpen={setIsPopoverOpen} />
+              </PopoverContent>
+            </Popover>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>
+              {config.label} (Press {config.shortcut})
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Render normal mode buttons
   return (
     <TooltipProvider>
       <Tooltip>
@@ -146,7 +166,7 @@ const ModeButton: React.FC<{
           <Button
             variant={isActive ? "default" : "ghost"}
             onClick={config.mode === ModeEnum.DOWNLOAD ? downloadRegion : onClick}
-            size={"icon"}
+            size="icon"
             className="shadow-none h-8 w-8 rounded p-2 flex items-center justify-center"
           >
             <config.icon className="w-4 h-4 bg-inherit" />
@@ -181,7 +201,9 @@ const Toolbar: React.FC = () => {
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      const config = modeConfigs.find((c) => c.shortcut === event.key);
+      const config = modeConfigs.find((c) => 
+        c.shortcut.toLowerCase() === event.key.toLowerCase()
+      );
       if (config && !config.disabled) {
         handleModeChange(config.mode);
       }
@@ -192,8 +214,8 @@ const Toolbar: React.FC = () => {
   }, [handleModeChange]);
 
   return (
-    <nav className="flex items-center border md:rounded-xl flex items-center p-1 shadow-sm border z-5 mt-3">
-      <ul className="flex items-center gap-2 rounded-lg p-1 max-w-full flex-wrap">
+    <nav className="z-5 mt-3 flex items-center border p-1 shadow-sm md:rounded-xl">
+      <ul className="flex max-w-full flex-wrap items-center gap-2 rounded-lg p-1">
         {modeConfigs.map((config) => (
           <li key={config.mode} className="relative">
             <ModeButton
