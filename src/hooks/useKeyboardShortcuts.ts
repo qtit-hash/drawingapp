@@ -138,4 +138,4 @@ export const useKeyboardShortcuts = (
       window.removeEventListener("keydown", handleKeyDown)
     }
   }, [strokes, handleCanvasClickOutside, setIsAlertDialogOpen, panOffset, updatePanOffset])
-}8
+}
