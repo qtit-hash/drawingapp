@@ -11,6 +11,7 @@ import {
   Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import {
   Tooltip,
   TooltipContent,
@@ -32,7 +33,7 @@ interface ModeConfig {
   label: string;
   shortcut: string;
   disabled?: boolean;
-  special?: 'palette';  // Special flag for palette button
+  special?: 'palette' | 'download';
 }
 
 const modeConfigs: ModeConfig[] = [
@@ -44,7 +45,7 @@ const modeConfigs: ModeConfig[] = [
     shortcut: "1",
   },
   {
-    special: 'palette',  // Add palette button right after draw mode
+    special: 'palette',
     mode: 'palette' as Mode,
     icon: Palette,
     cursorStyle: "default",
@@ -73,6 +74,7 @@ const modeConfigs: ModeConfig[] = [
     shortcut: "4",
   },
   {
+    special: 'download',
     mode: ModeEnum.DOWNLOAD,
     icon: Download,
     cursorStyle: "default",
@@ -88,46 +90,20 @@ interface ModeButtonProps {
 }
 
 const ModeButton: React.FC<ModeButtonProps> = ({ config, isActive, onClick }) => {
-  const { boundingBox, canvasRef } = useStrokesStore();
   const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
+  const { toast } = useToast();
+  const { downloadImage } = useStrokesStore();
 
-  const downloadRegion = () => {
-    if (!canvasRef?.current || !boundingBox) return;
-
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
-    
-    if (!tempCtx) return;
-
-    tempCanvas.width = boundingBox.width;
-    tempCanvas.height = boundingBox.height;
-
-    tempCtx.drawImage(
-      canvasRef.current,
-      boundingBox.x,
-      boundingBox.y,
-      boundingBox.width,
-      boundingBox.height,
-      0,
-      0,
-      boundingBox.width,
-      boundingBox.height
+  const handleDownload = () => {
+    downloadImage((message: string) =>
+      toast({
+        variant: "destructive",
+        title: message,
+        duration: 1000,
+      })
     );
-
-    const link = document.createElement('a');
-    link.download = 'canvas-region.png';
-    
-    tempCanvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
-      }
-    }, 'image/png');
   };
 
-  // Render palette button
   if (config.special === 'palette') {
     return (
       <TooltipProvider>
@@ -158,14 +134,13 @@ const ModeButton: React.FC<ModeButtonProps> = ({ config, isActive, onClick }) =>
     );
   }
 
-  // Render normal mode buttons
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant={isActive ? "default" : "ghost"}
-            onClick={config.mode === ModeEnum.DOWNLOAD ? downloadRegion : onClick}
+            onClick={config.special === 'download' ? handleDownload : onClick}
             size="icon"
             className="shadow-none h-8 w-8 rounded p-2 flex items-center justify-center"
           >

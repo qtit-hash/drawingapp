@@ -32,7 +32,7 @@ const StylingPallete: React.FC<props> = ({ setIsPopoverOpen }) => {
     
     // Add # if user starts typing without it
     if (value.length > 0 && !value.startsWith('#')) {
-      setCustomColor('#' + value);
+      setCustomColor('#' + value);  
       return;
     }
 

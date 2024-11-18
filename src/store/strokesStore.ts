@@ -7,8 +7,9 @@ import {
   doesIntersect,
   eraseTextStrokes,
 } from "@/lib/utils";
-import { useCanvas } from "@/hooks/useCanvas";
+import { calculateGlobalBoundingBox } from "@/hooks/selectionBox";
 import { BoundingBox } from "@/hooks/selectionBox";
+
 interface StrokesState {
   mode: Mode;
   strokes: Stroke[];
@@ -31,12 +32,14 @@ interface StrokesState {
   updateStrokeWidth: (strokeWidth: number) => void;
   handleZoom: (zoomIn: boolean) => void;
   updatePanOffset: (newOffset: { x: number; y: number }) => void;
+  downloadImage: (toast: (message: string) => void) => void;
   updateScale: (newScale: number) => void;
   clearCanvas: () => void;
   updateStrokeTaper: (strokeTaper: number) => void;
   updateStroke: (updatedStroke: Stroke) => void;
   boundingBox: (BoundingBox | null);
   setBoundingBox: (box: BoundingBox | null) => void;
+  setStrokes: (newStrokes: Stroke[]) => void;
 }
 
 export const useStrokesStore = create<StrokesState>((set, get) => ({
@@ -50,9 +53,10 @@ export const useStrokesStore = create<StrokesState>((set, get) => ({
   scale: 1,
   panOffset: { x: 0, y: 0 },
   canvasRef: { current: null },
-  boundingBox: null, // Store current bounding box here
+  boundingBox: null,
 
   setBoundingBox: (box) => set(() => ({ boundingBox: box })),
+  setStrokes: (newStrokes) => set({ strokes: newStrokes }),
 
   updateCursorStyle: (cursorStyle: string) => set({ cursorStyle }),
   updateMode: (mode: Mode) => set({ mode }),
@@ -112,7 +116,63 @@ export const useStrokesStore = create<StrokesState>((set, get) => ({
     set({ panOffset: newPanOffset, scale: newScale });
   },
   clearCanvas: () => set({ strokes: [], undoneStrokes: [] }),
+  downloadImage: (toast: (message: string) => void) => {
+    const { strokes, canvasRef } = get();
+    if (strokes.length === 0) {
+      toast("Canvas is empty!");
+      return;
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    // Calculate the bounding box of all strokes
+    const boundingBox = calculateGlobalBoundingBox(strokes);
+    if (!boundingBox) {
+      toast("No content to download!");
+      return;
+    }
+
+    // Create a new canvas with the size of the bounding box
+    const croppedCanvas = document.createElement("canvas");
+    croppedCanvas.width = boundingBox.width;
+    croppedCanvas.height = boundingBox.height;
+    const croppedContext = croppedCanvas.getContext("2d");
+    if (!croppedContext) return;
+
+    // Fill the background with white
+    croppedContext.fillStyle = "white";
+    croppedContext.fillRect(0, 0, boundingBox.width, boundingBox.height);
+
+    // Draw the strokes on the new canvas
+    strokes.forEach((stroke) => {
+      if (stroke.type === "draw") {
+        const path = new Path2D(stroke.path);
+        croppedContext.fillStyle = stroke.color;
+        croppedContext.translate(-boundingBox.x, -boundingBox.y);
+        croppedContext.fill(path);
+        croppedContext.translate(boundingBox.x, boundingBox.y);
+      } else if (stroke.type === "text" && stroke.position) {
+        croppedContext.font = `${stroke.fontSize}px ${stroke.fontFamily}`;
+        croppedContext.fillStyle = stroke.color;
+        croppedContext.textBaseline = "top";
+        croppedContext.fillText(
+          stroke.text!,
+          stroke.position.x - boundingBox.x,
+          stroke.position.y - boundingBox.y
+        );
+      }
+    });
+
+    // Convert the cropped canvas to an image and download it
+    const image = croppedCanvas.toDataURL("image/png");
+    const downloadLink = document.createElement("a");
+    downloadLink.href = image;
+    downloadLink.download = "canvas_image.png";
+    downloadLink.click();
+  },
   updateStroke: (updatedStroke: Stroke) => set((state) => ({
     strokes: state.strokes.map((stroke) =>
       stroke === updatedStroke ? updatedStroke : stroke
