@@ -28,13 +28,7 @@ const StylingPallete: React.FC<props> = ({ setIsPopoverOpen }) => {
   // Handle custom color input change
   const handleCustomColorChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setCustomColor(value);
     
-    // Add # if user starts typing without it
-    if (value.length > 0 && !value.startsWith('#')) {
-      setCustomColor('#' + value);  
-      return;
-    }
 
     // Validate color as user types
     setIsValidColor(value === '' || isValidHexColor(value));

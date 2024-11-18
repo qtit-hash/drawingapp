@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar"
+import { useState, useEffect } from 'react'
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader} from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Plus, Undo2, Redo2, Settings2, ChevronDown, X, FileText, ChevronRight, HardHatIcon, SquareIcon as SquareRoot } from 'lucide-react'
+
+import { Plus, Undo2, Redo2, Settings2, ChevronDown, X, FileText, ChevronRight} from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 
@@ -36,7 +36,6 @@ export default function CustomSidebar({
   equations, 
   selectedId, 
   setSelectedId, 
-  handleRemove: parentHandleRemove,
   pages,
   activePage,
   onPageChange,
@@ -55,12 +54,6 @@ export default function CustomSidebar({
     ))
   }
 
-  const insertSymbol = (id: number, symbol: string) => {
-    const equation = localEquations.find(eq => eq.id === id)
-    if (equation) {
-      updateEquation(id, equation.equation + symbol)
-    }
-  }
 
   const addEquation = () => {
     const newId = Math.max(0, ...localEquations.map(eq => eq.id)) + 1

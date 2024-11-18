@@ -1,5 +1,5 @@
 import { useStrokesStore } from "@/store/strokesStore";
-import { Minus, Plus, ZoomIn, ZoomOut} from "lucide-react";
+import { Minus, Plus} from "lucide-react";
 import { Button } from "../ui/button";
 
 

@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Point, ModeEnum, options } from "@/lib/utils";
 import { useStrokesStore } from "@/store/strokesStore";
 import { getStroke } from "perfect-freehand";
 import { getSvgPathFromStroke } from "@/lib/utils";
-import { BoundingBox, calculateBoundingBox, drawSelectionBox, calculateGlobalBoundingBox } from "./selectionBox";
+import {  calculateBoundingBox, drawSelectionBox, calculateGlobalBoundingBox } from "./selectionBox";
 
 export const useCanvas = () => {
   const [points, setPoints] = useState<Point[]>([]);

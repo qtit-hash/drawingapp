@@ -9,8 +9,6 @@ import { useStrokesStore } from "@/store/strokesStore"
 import HomePage from './HomePage'
 import { SidebarProvider } from "@/components/ui/sidebar"
 import CustomSidebar from '@/components/custom/CustomSidebar'
-import { Button } from "@/components/ui/button"
-import { Plus } from 'lucide-react'
 
 interface MathEquation {
   id: number

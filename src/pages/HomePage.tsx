@@ -1,4 +1,4 @@
-import { Search, Plus, Command, Bell, Grid, List, MoreHorizontal, GitBranch, Clock } from "lucide-react";
+import { Search, Plus, Command, Grid, List, MoreHorizontal, GitBranch, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
