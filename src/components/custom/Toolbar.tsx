@@ -92,10 +92,10 @@ interface ModeButtonProps {
 const ModeButton: React.FC<ModeButtonProps> = ({ config, isActive, onClick }) => {
   const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
   const { toast } = useToast();
-  const { downloadImage } = useStrokesStore();
+  const { computemodule } = useStrokesStore();
 
   const handleDownload = () => {
-    downloadImage((message: string) =>
+    computemodule((message: string) =>
       toast({
         variant: "destructive",
         title: message,

@@ -16,7 +16,7 @@ export const useKeyboardShortcuts = (
     updateCursorStyle,
     undoStroke,
     redoStroke,
-    downloadImage,
+    computemodule,
     panOffset,
     updatePanOffset,
   } = useStrokesStore((state) => state)
@@ -93,7 +93,7 @@ export const useKeyboardShortcuts = (
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toUpperCase() === "S") {
         e.preventDefault()
-        downloadImage((message: string) =>
+        computemodule((message: string) =>
           toast({
             variant: "destructive",
             title: message,

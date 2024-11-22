@@ -9,6 +9,7 @@ import {
 } from "@/lib/utils";
 import { calculateGlobalBoundingBox } from "@/hooks/selectionBox";
 import { BoundingBox } from "@/hooks/selectionBox";
+import axios from "axios";
 
 interface StrokesState {
   mode: Mode;
@@ -21,6 +22,9 @@ interface StrokesState {
   scale: number;
   panOffset: { x: number; y: number };
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  boundingBox: BoundingBox | null;
+  apiResponse: any; // Thêm trường để lưu kết quả API
+  setApiResponse: (response: any) => void; // Hàm để cập nhật apiResponse
 
   updateCursorStyle: (cursorStyle: string) => void;
   updateMode: (mode: Mode) => void;
@@ -32,14 +36,13 @@ interface StrokesState {
   updateStrokeWidth: (strokeWidth: number) => void;
   handleZoom: (zoomIn: boolean) => void;
   updatePanOffset: (newOffset: { x: number; y: number }) => void;
-  downloadImage: (toast: (message: string) => void) => void;
   updateScale: (newScale: number) => void;
   clearCanvas: () => void;
   updateStrokeTaper: (strokeTaper: number) => void;
   updateStroke: (updatedStroke: Stroke) => void;
-  boundingBox: (BoundingBox | null);
   setBoundingBox: (box: BoundingBox | null) => void;
   setStrokes: (newStrokes: Stroke[]) => void;
+  computemodule: (toast: (message: string) => void) => void;
 }
 
 export const useStrokesStore = create<StrokesState>((set, get) => ({
@@ -54,6 +57,9 @@ export const useStrokesStore = create<StrokesState>((set, get) => ({
   panOffset: { x: 0, y: 0 },
   canvasRef: { current: null },
   boundingBox: null,
+  apiResponse: null, // Khởi tạo giá trị mặc định là null
+
+  setApiResponse: (response) => set({ apiResponse: response }), // Hàm cập nhật apiResponse
 
   setBoundingBox: (box) => set(() => ({ boundingBox: box })),
   setStrokes: (newStrokes) => set({ strokes: newStrokes }),
@@ -91,6 +97,7 @@ export const useStrokesStore = create<StrokesState>((set, get) => ({
   updateStrokeTaper: (strokeTaper: number) => set({ strokeTaper }),
   updatePanOffset: (newOffset: { x: number; y: number }) => set({ panOffset: newOffset }),
   updateScale: (newScale: number) => set({ scale: newScale }),
+
   handleZoom: (zoomIn: boolean) => {
     const { scale, panOffset, canvasRef } = get();
     const canvas = canvasRef.current;
@@ -115,9 +122,11 @@ export const useStrokesStore = create<StrokesState>((set, get) => ({
 
     set({ panOffset: newPanOffset, scale: newScale });
   },
+
   clearCanvas: () => set({ strokes: [], undoneStrokes: [] }),
-  downloadImage: (toast: (message: string) => void) => {
-    const { strokes, canvasRef } = get();
+
+  computemodule: async (toast: (message: string) => void): Promise<void> => {
+    const { strokes, canvasRef, setApiResponse } = get();
     if (strokes.length === 0) {
       toast("Canvas is empty!");
       return;
@@ -128,25 +137,25 @@ export const useStrokesStore = create<StrokesState>((set, get) => ({
     const context = canvas.getContext("2d");
     if (!context) return;
 
-    // Calculate the bounding box of all strokes
+    // Tính toán bounding box của tất cả strokes
     const boundingBox = calculateGlobalBoundingBox(strokes);
     if (!boundingBox) {
       toast("No content to download!");
       return;
     }
 
-    // Create a new canvas with the size of the bounding box
+    // Tạo canvas mới với kích thước của bounding box
     const croppedCanvas = document.createElement("canvas");
     croppedCanvas.width = boundingBox.width;
     croppedCanvas.height = boundingBox.height;
     const croppedContext = croppedCanvas.getContext("2d");
     if (!croppedContext) return;
 
-    // Fill the background with white
+    // Vẽ nền trắng cho canvas mới
     croppedContext.fillStyle = "white";
     croppedContext.fillRect(0, 0, boundingBox.width, boundingBox.height);
 
-    // Draw the strokes on the new canvas
+    // Vẽ các strokes lên canvas mới
     strokes.forEach((stroke) => {
       if (stroke.type === "draw") {
         const path = new Path2D(stroke.path);
@@ -166,13 +175,42 @@ export const useStrokesStore = create<StrokesState>((set, get) => ({
       }
     });
 
-    // Convert the cropped canvas to an image and download it
-    const image = croppedCanvas.toDataURL("image/png");
-    const downloadLink = document.createElement("a");
-    downloadLink.href = image;
-    downloadLink.download = "canvas_image.png";
-    downloadLink.click();
+    // Chuyển canvas cắt thành base64
+    const imageBase64 = croppedCanvas.toDataURL("image/png");
+
+    const byteString = atob(imageBase64.split(',')[1]);
+    const arrayBuffer = new ArrayBuffer(byteString.length);
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    for (let i = 0; i < byteString.length; i++) {
+      uint8Array[i] = byteString.charCodeAt(i);
+    }
+
+    // Tạo một Blob từ buffer
+    const blob = new Blob([uint8Array], { type: 'image/png' });
+    console.log('sending')
+    // Tạo FormData và append file (blob)
+    const formData = new FormData();
+    formData.append('file', blob, 'canvas-image.png');
+
+    try {
+      // Gửi ảnh đến API /predict
+      const response = await axios.post('https://3000-01jcw1786zb4s3zn2vdy00tba0.cloudspaces.litng.ai/predict', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // Cập nhật global state với kết quả từ API
+      setApiResponse(response.data);
+      console.log(response.data);  // In ra phản hồi API trong console
+
+    } catch (error) {
+      toast("Error sending request to API");
+      console.error(error);
+    }
   },
+
   updateStroke: (updatedStroke: Stroke) => set((state) => ({
     strokes: state.strokes.map((stroke) =>
       stroke === updatedStroke ? updatedStroke : stroke
@@ -184,3 +222,4 @@ export const useStrokesStore = create<StrokesState>((set, get) => ({
 useStrokesStore.subscribe((state) => {
   localStorage.setItem("strokes", JSON.stringify(state.strokes));
 });
+``

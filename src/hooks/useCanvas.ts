@@ -90,7 +90,6 @@ export const useCanvas = () => {
         setPoints((prev) => {
           const newPoints = [...prev, { x, y, pressure: e.pressure }];
           if (mode === ModeEnum.DRAW) {
-          console.log(boundingBox)
 
            setBoundingBox(calculateBoundingBox(newPoints));
            

@@ -26,8 +26,7 @@ const SketchView = () => {
   const { strokes, setStrokes } = useStrokesStore()
 
   const [equations, setEquations] = React.useState<MathEquation[]>([
-    { id: 1, equation: '2x + y = 0', type: 'linear' },
-    { id: 2, equation: '2x²', type: 'quadratic' },
+
   ])
   
   const [selectedId, setSelectedId] = React.useState(3)
