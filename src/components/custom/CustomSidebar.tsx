@@ -37,34 +37,43 @@ interface CustomSidebarProps {
 
 const ce = new ComputeEngine()
 
-async function calculateResult(equation: string, variables?: { [key: string]: number }): Promise<string> {
-  try {
-    let expr = ce.parse(equation)
-    if (variables) {
-      for (const [key, value] of Object.entries(variables)) {
-        expr = expr.subs(key, value)
-      }
-    }
-    const result = await expr.evaluate()
-    return result.latex
-  } catch (error) {
-    console.error('Error calculating result:', error)
-    return 'Error'
-  }
-}
-
 const detectAndAddVariables = (equation: string, existingVariables: { [key: string]: number }) => {
-  const variableRegex = /[a-zA-Z]/g;
-  const detectedVariables = [...new Set(equation.match(variableRegex) || [])];
+  const mathFunctions = ['sin', 'cos', 'tan', 'log', 'ln'];
+  let cleanEquation = equation;
+  
+  mathFunctions.forEach(func => {
+    cleanEquation = cleanEquation.replace(new RegExp(func, 'g'), '');
+  });
+  
+  const variableRegex = /(?:^|[^a-zA-Z])[a-zA-Z](?:$|[^a-zA-Z])/g;
+  const matches = cleanEquation.match(variableRegex) || [];
+  const detectedVariables = [...new Set(matches.map(match => match.trim().match(/[a-zA-Z]/)?.[0] || ''))];
   
   const updatedVariables = { ...existingVariables };
   detectedVariables.forEach(variable => {
-    if (!(variable in updatedVariables)) {
+    if (variable && !(variable in updatedVariables)) {
       updatedVariables[variable] = 0;
     }
   });
   
+  Object.keys(updatedVariables).forEach(key => {
+    if (!detectedVariables.includes(key)) {
+      delete updatedVariables[key];
+    }
+  });
+  
   return updatedVariables;
+}
+
+async function calculateResult(equation: string, variables?: { [key: string]: number }): Promise<string> {
+  try {
+    const expr = ce.parse(equation);
+    const result = await expr.evaluate(variables);
+    return result.latex;
+  } catch (error) {
+    console.error('Error calculating result:', error);
+    return 'Error';
+  }
 }
 
 export default function CustomSidebar({ 
