@@ -8,8 +8,6 @@ import Toolbar from "@/components/custom/Toolbar"
 import { useStrokesStore } from "@/store/strokesStore"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import CustomSidebar from '@/components/custom/CustomSidebar'
-import '/node_modules/mathlive/dist/mathlive-fonts.css'
-import '@/components/custom/mathlive/dist/mathlive-fonts.css'
 interface MathEquation {
   id: number
   equation: string

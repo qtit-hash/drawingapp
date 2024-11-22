@@ -1,7 +1,5 @@
 import { useRef, useEffect } from 'react'
 import type { MathfieldElement } from 'mathlive'
-import '@/components/custom/mathlive/dist/mathlive-static.css'
-import '@/components/custom/mathlive/dist/mathlive-fonts.css'
 
 interface MathInputProps {
   initialValue: string
