@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Plus, Undo2, Redo2, Settings2, ChevronDown, X, FileText, ChevronRight } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import MathInput from './MathInput'
-
+import "//unpkg.com/mathlive";
 interface MathEquation {
   id: number
   equation: string

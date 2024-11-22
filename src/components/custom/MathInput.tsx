@@ -1,5 +1,7 @@
 import { useRef, useEffect } from 'react'
 import type { MathfieldElement } from 'mathlive'
+import "//unpkg.com/mathlive";
+import "https://unpkg.com/mathlive@0.101.2/dist/mathlive.min.js";
 
 interface MathInputProps {
   initialValue: string
@@ -38,16 +40,16 @@ const MathInput = ({ initialValue, onChange, placeholder }: MathInputProps) => {
           ref={mathfieldRef}
           virtual-keyboard-mode="onfocus"
           virtual-keyboards="numeric symbols"
+
           placeholder={placeholder}
           style={{
             width: 'auto',
             border: 'none',
             outline: 'none',
-            boxShadow: 'none'
+            boxShadow: 'none',
           }}
         />
       </div>
-      {/* Removed the border divs */}
     </div>
   )
 }
