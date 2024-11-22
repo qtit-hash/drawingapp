@@ -4,10 +4,9 @@ import { useState, useEffect } from 'react'
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader} from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-
-import { Plus, Undo2, Redo2, Settings2, ChevronDown, X, FileText, ChevronRight} from 'lucide-react'
+import { Plus, Undo2, Redo2, Settings2, ChevronDown, X, FileText, ChevronRight } from 'lucide-react'
 import { cn } from "@/lib/utils"
-import { Input } from "@/components/ui/input"
+import MathInput from './MathInput'
 
 interface MathEquation {
   id: number
@@ -53,7 +52,6 @@ export default function CustomSidebar({
       eq.id === id ? { ...eq, equation: newEquation } : eq
     ))
   }
-
 
   const addEquation = () => {
     const newId = Math.max(0, ...localEquations.map(eq => eq.id)) + 1
@@ -156,26 +154,22 @@ export default function CustomSidebar({
               onClick={() => setSelectedId(eq.id)}
             >
               <div className="flex items-center gap-3 flex-1">
-              <span className="text-sm text-muted-foreground">{index + 1}</span>
-              <div className="flex items-center gap-2 flex-1">
-                <div 
-                  className={cn(
-                    "h-6 w-6 rounded-full transition-colors duration-200",
-                    "group-focus-within:bg-blue-600 bg-blue-500"
-                  )} 
-                />
-                <div className="relative flex-1">
-                  <Input
-                    value={eq.equation}
-                    onChange={(e) => updateEquation(eq.id, e.target.value)}
-                    className="flex-1 font-mono border-none bg-transparent outline-none ring-0 focus:ring-0 focus-visible:ring-0 relative z-10"
-                    placeholder="Enter equation..."
+                <span className="text-sm text-muted-foreground">{index + 1}</span>
+                <div className="flex items-center gap-2 flex-1">
+                  <div 
+                    className={cn(
+                      "h-6 w-6 rounded-full transition-colors duration-200",
+                      "group-focus-within:bg-blue-600 bg-blue-500"
+                    )} 
                   />
-                  <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-muted-foreground/40" />
-                  <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-blue-600 scale-x-0 transition-transform duration-200 origin-left group-focus-within:scale-x-100" />
+                  <div className="relative flex-1">
+                    <MathInput
+                      initialValue={eq.equation}
+                      onChange={(value) => updateEquation(eq.id, value)}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
               <div className="flex gap-1">
                 <Button
                   variant="ghost"
@@ -196,3 +190,4 @@ export default function CustomSidebar({
     </Sidebar>
   )
 }
+
