@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader} from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -10,6 +10,7 @@ import MathInput from './MathInput'
 import "//unpkg.com/mathlive"
 import { ComputeEngine } from '@cortex-js/compute-engine'
 import * as math from 'mathjs'
+import { useStrokesStore } from '@/store/strokesStore'
 
 interface MathEquation {
   id: number
@@ -95,10 +96,31 @@ export default function CustomSidebar({
   onRemovePage
 }: CustomSidebarProps) {
   const [localEquations, setLocalEquations] = useState(equations)
-
+  const apiResponse = useStrokesStore((state) => state.apiResponse)
   useEffect(() => {
-    setLocalEquations(equations);
-  }, [equations]);
+    if (apiResponse && apiResponse.ocr_responses) {
+      const newEquations = apiResponse.ocr_responses.map((ocrText: any, index: number) => ({
+        id: Math.max(0, ...localEquations.map(eq => eq.id)) + index + 1,
+        equation: ocrText,
+        type: 'linear' // Có thể thay đổi tùy vào loại phương trình
+      }))
+
+      // Kiểm tra để tránh thêm lại các phương trình đã tồn tại
+      const newLocalEquations = newEquations.filter((eq: { id: number }) => !addedEquationsRef.current.has(eq.id))
+
+      // Nếu có phương trình mới, cập nhật lại
+      if (newLocalEquations.length > 0) {
+        setLocalEquations(prev => [...prev, ...newLocalEquations])
+
+        // Cập nhật ref để theo dõi các phương trình đã được thêm vào
+        newLocalEquations.forEach((eq: { id: number }) => addedEquationsRef.current.add(eq.id))
+      }
+    }
+  }, [apiResponse]) // Đảm bảo useEffect chỉ chạy khi apiResponse thay đổi
+
+  // Ref để theo dõi các phương trình đã được thêm vào
+  const addedEquationsRef = useRef(new Set<number>())
+
 
   const updateEquation = async (id: number, newEquation: string) => {
     setLocalEquations(await Promise.all(localEquations.map(async eq => {
