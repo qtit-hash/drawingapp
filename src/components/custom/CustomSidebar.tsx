@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import MathInput from './MathInput'
 import "//unpkg.com/mathlive"
 import { ComputeEngine } from '@cortex-js/compute-engine'
+import * as math from 'mathjs'
 
 interface MathEquation {
   id: number
@@ -67,9 +68,16 @@ const detectAndAddVariables = (equation: string, existingVariables: { [key: stri
 
 async function calculateResult(equation: string, variables?: { [key: string]: number }): Promise<string> {
   try {
-    const expr = ce.parse(equation);
-    const result = await expr.evaluate(variables);
-    return result.latex;
+    if (variables && Object.keys(variables).length > 0) {
+      // Use mathjs for calculations with variables
+      const result = math.evaluate(equation, variables)
+      return result.toString()
+    } else {
+      // Use ComputeEngine for calculations without variables
+      const expr = ce.parse(equation);
+      const result = await expr.evaluate();
+      return result.latex;
+    }
   } catch (error) {
     console.error('Error calculating result:', error);
     return 'Error';
