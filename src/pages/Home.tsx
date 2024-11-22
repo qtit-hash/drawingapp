@@ -6,7 +6,6 @@ import Footer from "@/components/custom/Footer"
 import SketchCanvas from "@/components/custom/SketchCanvas"
 import Toolbar from "@/components/custom/Toolbar"
 import { useStrokesStore } from "@/store/strokesStore"
-import HomePage from './HomePage'
 import { SidebarProvider } from "@/components/ui/sidebar"
 import CustomSidebar from '@/components/custom/CustomSidebar'
 
@@ -133,8 +132,7 @@ const Home = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/sketch" element={<SketchView />} />
+        <Route path="/drawingapp" element={<SketchView />} />
       </Routes>
     </Router>
   )
